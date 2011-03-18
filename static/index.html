@@ -1,0 +1,443 @@
+<!doctype html>
+<html>
+    <head>
+        <title>WDPRO Spaces</title>
+        <script src="/socket.io/socket.io.js"></script>
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5/jquery.min.js"></script>
+        <script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.min.js"></script>
+        <link type="text/css" rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/themes/start/jquery-ui.css" />
+        <style>
+
+html {
+    font-size: 70%;
+    font-family: sans-serif;
+}
+
+body {
+    margin: 0;
+    padding: 10px;
+}
+
+header {
+    position: relative;
+    height: 65px;
+    padding: 0;
+    margin: 0;
+    color: #222;
+}
+
+header h1 {
+    background: url(wdpro-logo.png) no-repeat 10px 14px;
+    padding: 0 0 0 60px;
+    margin: 0;
+    display: inline-block;
+    line-height: 65px;
+}
+
+header #account {
+    float: right;
+    padding: 0 2em;
+    margin: 0;
+    font-size: 1.1em;
+    line-height: 65px;
+}
+
+section#content {
+    position: fixed;
+    top: 80px;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+}
+
+div#accordion {
+    width: 195px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+}
+
+div#tabs {
+    display: none;
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 200px;
+}
+
+.ui-accordion .ui-accordion-content {
+    padding: 5px;
+}
+
+.ui-icon { display:inline-block; }
+.dialog fieldset {padding:0; border:0; margin-top:15px; }
+.dialog label, .dialog input { display:block; }
+#spacePrivacyRadios label { display: inline-block; }
+#spacePrivacyDescription { margin: 1em 0; }
+.dialog input { margin-bottom:12px; padding: .4em; }
+.dialog, .dialog .error { display:none; }
+.ui-dialog .ui-state-error { padding: .3em; }
+textarea {width:95%;height:250px;}
+
+#newSpaceButton {
+    width: 100%;
+}
+
+#spaceList, #userList {
+    list-style: none;
+    margin: 5px;
+    padding: 0;
+}
+
+#spaceList li, #userList li {
+    padding: 5px;
+    background: transparent;
+    transition: background, 0.5s;
+    -webkit-transition: background, 0.5s;
+    -moz-transition: background, 0.5s;
+
+}
+
+#spaceList li.space-private:after {
+    content: " (private)";
+}
+
+#spaceList li.space-hidden:after {
+    content: " (hidden)";
+}
+
+#spaceList li:hover {
+    cursor: pointer;
+    background: #98d4ed;
+    transition-duration: 0s;
+    -webkit-transition-duration: 0s;
+}
+        
+        </style>
+    </head>
+    <body>
+        <header>
+            <h1>WDPRO Spaces</h1>
+            <div id="account"><button id="login">Login</button><span id="username"></span></div>
+        </header>
+  
+        <div id="login-dialog" title="Login" class="dialog">
+            <p>Passwords? Geez, this is just a demo...</p><p class="error"></p>
+            <form>
+                <fieldset>
+                    <label for="login-name">Username</label><input type="text" name="login-name" id="login-name" class="ui-widget-content ui-corner-all" />
+                </fieldset>
+            </form>
+        </div>
+  
+        <div id="new-space-dialog" title="Create a New Space" class="dialog">
+            <p class="error"></p>
+            <form>
+                <fieldset>
+                    <label for="spaceName">Space Name</label><input type="text" name="spaceName" id="spaceName" class="ui-widget-content ui-corner-all" />
+                    <label>Space Access</label>
+                    <div id="spacePrivacyRadios">
+                        <input type="radio" id="spacePrivacyRadioPublic" name="spacePrivacy" value="public" checked /><label for="spacePrivacyRadioPublic" alt="Anyone can enter the Space.">Public</label>
+                        <input type="radio" id="spacePrivacyRadioPrivate" name="spacePrivacy" value="private" /><label for="spacePrivacyRadioPrivate" alt="Users must be invited or request access.">Private</label>
+                        <input type="radio" id="spacePrivacyRadioHidden" name="spacePrivacy" value="hidden" /><label for="spacePrivacyRadioHidden" alt="Not visible in the Space listing. Users must be invited.">Hidden</label>
+                    </div>
+                    <div id="spacePrivacyDescription">&nbsp;</div>
+                </fieldset>
+            </form>
+        </div>
+  
+        <div id="edit-space-dialog" title="Edit Your Space" class="dialog">
+            <p class="error"></p>
+            <form>
+                <fieldset>
+				<input type="hidden" name="editSpaceId" id= "editSpaceId" value="">
+                    <label for="spaceHTML">Space HTML</label><textarea name="spaceHTML" id="spaceHTML" class="ui-widget-content ui-corner-all"></textarea>
+                    <label for="spaceJS">Space Javascript</label><textarea name="spaceJS" id="spaceJS" class="ui-widget-content ui-corner-all"></textarea>
+                </fieldset>
+            </form>
+        </div>
+        
+        <section id="content">
+            <div id="accordion">
+                <h3><a href="#">Spaces</a></h3>
+                <div>
+                    <button id="newSpaceButton">Create a New Space</button>
+                    <ul id="spaceList">
+                    </ul>
+                </div>
+                <h3><a href="#">Users</a></h3>
+                <div>
+                    <ul id="userList">
+                    </ul>
+                </div>
+            </div>
+            
+            <div id="tabs">
+                <ul>
+                </ul>
+            </div>
+        </section>
+    
+    
+    
+        <script>
+            var socket;
+            
+            var merge = function () {
+                var obj = {}, l = arguments.length, i, prop;
+                for (i=0; (donor = arguments[i++]); ) {
+                    for (prop in donor) {
+                        obj[prop] = donor[prop];
+                    }
+                }
+                return obj;
+            };
+            
+            var sendEvent = function (event, data) {
+                var base = {};
+                base.event = event;
+                if (localStorage['identity']) base.from = JSON.parse(localStorage['identity']);
+                
+                switch (typeof data) {
+                case 'undefined':
+                    data = {};
+                    break;
+                case 'string':
+                case 'number':
+                case 'boolean':
+                    data = {'message': data};
+                    break;
+                }
+                
+                socket.send(merge(base, data));
+            };
+            
+            
+            (function ($) {
+            
+                $.fn.serializeObj = function () {
+                    var obj = {};
+                    $.each($(this).serializeArray(), function (i, n) {
+                        obj[n['name']] = n['value'];
+                    });
+                    return obj;
+                };
+                
+                var handleEvent = function (event, callback) {
+                    $(document).bind(event, callback);
+                };
+                
+                var addSpaceToList = function (space) {
+                    $('#spaceList').append('<li class="space-' + space.access + '" data-space-id="' + space.id + '" data-space-name="' + space.name + '">' + space.name + '</li>');
+                };
+                
+                var addUserToList = function (user) {
+			if (!document.getElementById('user-' + user.id)) $('#userList').append('<li id="user-' + user.id + '">' + user.name + '</li>');
+                };
+                
+                var removeUserFromList = function (user) {
+                    $('#userList').find('#user-' + user.id).remove();
+                };
+
+
+                
+                var loadSpace = function (space) {
+                    $('#tabs').tabs('add', '#tab-' + space.id, space.name);
+                    $('#tabs').tabs('select', '#tab-' + space.id);
+                    sendEvent('load-space', {space: space});
+                };
+            
+                $(function () {
+                    socket = new io.Socket(null, {port: 8080, rememberTransport: false});
+                    socket.connect();
+                    socket.on('message', function (obj) {
+                        if ('event' in obj) {
+                            console.log('Server event: ' + JSON.stringify(obj));
+                            $(document).trigger(obj.event, [obj]);
+                        }
+                    });
+                    
+                    handleEvent('who-are-you', function (e, data) {
+                        if (localStorage['identity']) {
+                            sendEvent('i-am');
+                        } else {
+                            $('#login-dialog').dialog('open');
+                        }
+                    });
+                    
+                    handleEvent('login-failure', function (e, data) {
+                        $('#login-dialog .error')
+                            .html('Login failed. Please try again.')
+                            .show('slow')
+                            .effect('highlight');
+                    });
+                    
+                    handleEvent('you-are', function (e, data) {
+                        localStorage['identity'] = JSON.stringify(data.user);
+                        $('#login-dialog').dialog('close');
+                        $('#tabs').show();
+                        $('#login').hide();
+                        loadSpace({id: 'space1', name: 'WDPRO'});
+                        $('#username').html(data.user.name).show();
+                        if (data.spaces) data.spaces.forEach(addSpaceToList);
+                        if (data.users) data.users.forEach(addUserToList);
+
+                    });
+                    
+                    handleEvent('create-space-failure', function (e, data) {
+                        $('#new-space-dialog .error')
+                            .html(data.error)
+                            .show('slow')
+                            .effect('highlight');
+                    });
+                    
+                    handleEvent('create-space-success', function (e, data) {
+                        $('#new-space-dialog').dialog('close');
+                        loadSpace(data.space);
+                    });
+                    
+                    handleEvent('new-space', function (e, data) {
+                        addSpaceToList(data.space);
+                    });
+                    
+                    handleEvent('new-user', function (e, data) {
+                        addUserToList(data.user);
+                    });
+                    
+                    handleEvent('user-disconnect', function (e, data) {
+                        removeUserFromList(data.user);
+                    });
+
+
+                    
+                    handleEvent('load-space-failure', function (e, data) {
+                        //indicate failure somehow
+                    });
+                    
+                    handleEvent('get-edit-space-success', function (e, data) {
+                        $('#edit-space-dialog').dialog('open');
+				$('#spaceHTML').val(data.html);
+				$('#spaceJS').val(data.js);
+				$('#editSpaceId').val(data.space.id);
+
+                    });
+                    
+                    handleEvent('submit-edit-space-success', function (e, data) {
+				$('#edit-space-dialog').dialog('close');
+                    });
+
+
+                    
+                    handleEvent('load-space-success', function (e, data) {
+                        var id = '#tab-' + data.space.id;
+                        $('#tabs').tabs('select', id);
+                        $(id).html('<div class="toolbar ui-widget-header ui-corner-all"><button class="editSpaceButton">Edit Space</button></div><div class="space-custom">' + data.html + '</div>');
+                        var spaceFn = new Function('container', '$', 'space', 'sendEvent', 'handleEvent', 'container.find(".toolbar button.editSpaceButton").button().click(function () {sendEvent("get-edit-space", {space: space});}); ' + data.js);
+                        spaceFn($(id), $, data.space, sendEvent, handleEvent);
+                    });
+                    
+                    $('#login').click(function () {
+                        $('#login-dialog').dialog('open');
+                    });
+                    
+                    $('#newSpaceButton').click(function () {
+                        $('#new-space-dialog').dialog('open');
+                    });
+                    
+                    $('#tabs').tabs();
+                    
+                    $('#accordion').accordion({fillSpace: true});
+                    $(window).resize(function () {
+                        $('#accordion').accordion('resize');
+                    });
+                    
+                    $('button').button();
+                    
+                    $('#login-dialog').dialog({
+			            autoOpen: false,
+			            width: 350,
+			            modal: true,
+			            buttons: {
+			                'Login': function () {
+			                    var data = $(this).find('form').serializeObj();
+			                    data['login-name'] = $.trim(data['login-name']);
+			                    sendEvent('login', data);
+			                },
+			                'Cancel': function () {
+					            $(this).dialog('close');
+					        }
+			            },
+			            close: function () {
+			                //cleanup
+			            }
+                    });
+                    
+                    $('#edit-space-dialog').dialog({
+			            autoOpen: false,
+			            width: '80%',
+			            modal: true,
+			            buttons: {
+			                'Submit': function () {
+			                    var data = $(this).find('form').serializeObj();
+			                    sendEvent('submit-edited-space', data);
+			                },
+			                'Cancel': function () {
+					            $(this).dialog('close');
+					        }
+			            },
+			            close: function () {
+			                $(this).find('textarea').val('');
+						$('#editSpaceId').val('');
+
+			            }
+                    });
+                    
+                    $('#spacePrivacyRadios').buttonset();
+                    $('#new-space-dialog').dialog({
+			            autoOpen: false,
+			            width: 350,
+			            modal: true,
+			            buttons: {
+			                'Create Space': function () {
+			                    var data = $(this).find('form').serializeObj();
+			                    data.spaceName = $.trim(data.spaceName);
+			                    sendEvent('create-space', data);
+			                },
+			                'Cancel': function () {
+					            $(this).dialog('close');
+					        }
+			            },
+			            close: function () {
+			                //cleanup
+			                $('#spaceName').val('');
+			                $('#spacePrivacyRadioPublic').attr('checked', 'checked');
+			                $('#spacePrivacyRadios').buttonset('refresh');
+			            }
+                    });
+                    $('#spacePrivacyRadios label').hover(function () {
+                        $('#spacePrivacyDescription').html($(this).text() + ': ' + $(this).attr('alt'));
+                    }, function () {
+                        $('#spacePrivacyDescription').html('&nbsp;');
+                    });
+
+                    $('#spaceList').live('click', function(event) {
+                        var space = $(event.target);
+
+                        if (space.hasClass('space-private')) {
+                            alert('Private Space');
+                        }
+
+                        loadSpace({id: space.data('space-id'), name: space.html()});
+                    });
+                    
+                    
+                    
+                    
+                });
+            })(jQuery);
+            
+        </script>
+    </body>
+</html>
