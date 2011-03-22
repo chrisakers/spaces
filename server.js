@@ -1,19 +1,14 @@
-var http         = require('http'),
+var SERVER_PORT  = 80,
+    http         = require('http'),
     url          = require('url'),
     fs           = require('fs'),
     io           = require('socket.io'),
     qs           = require('querystring'),
     userManager  = require('./models/user_manager.js'),
     spaceManager = require('./models/space_manager.js'),
-    //cradle       = require('cradle'),
-    //db           = new(cradle.Connection)().database('spaces'),
     //mailer       = require('./models/mailer.js'),
     server,
     send404;
-
-/*db.exists(function (err, exists) {
-    console.log(arguments);
-});*/
 
 
 server = http.createServer(function (req, res) {
@@ -69,7 +64,7 @@ var sendStatic = function (args, res) {
     });
 };
 
-server.listen(8080);
+server.listen(SERVER_PORT);
 
 io = io.listen(server);
   
@@ -172,4 +167,4 @@ io.on('connection', function(client){
 
 
 
-console.log('Server running at http://127.0.0.1:8080/');
+console.log('Server running on port ' + SERVER_PORT);
