@@ -5,15 +5,15 @@ var http         = require('http'),
     qs           = require('querystring'),
     userManager  = require('./models/user_manager.js'),
     spaceManager = require('./models/space_manager.js'),
-    cradle       = require('cradle'),
-    db           = new(cradle.Connection)().database('spaces'),
+    //cradle       = require('cradle'),
+    //db           = new(cradle.Connection)().database('spaces'),
     //mailer       = require('./models/mailer.js'),
     server,
     send404;
 
-db.exists(function (err, exists) {
+/*db.exists(function (err, exists) {
     console.log(arguments);
-});
+});*/
 
 
 server = http.createServer(function (req, res) {
