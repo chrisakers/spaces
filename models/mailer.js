@@ -5,23 +5,15 @@ nodemailer.SMTP = {
     port: 465,
     ssl: true,
     use_authentication: true,
-    user: "wdpro.spaces@gmail.com",
-    pass: "WDPRO-D1sn3y!"
+    user: "no.reply@gmail.com",
+    pass: "NoReply"
 }
-
-/*nodemailer.SMTP = {
-    host: "pooh.wdig.com", // required
-    port: 25, // optional, defaults to 25 or 465
-    use_authentication: false,
-    user: "",
-    pass: ""
-}*/
 
 var mailer = {
     send: function (to, subject, body, callback) {
         nodemailer.send_mail(
             {
-                sender:  "WDPRO Spaces <wdpro.spaces@gmail.com>", 
+                sender:  "No-Reply <no.reply@gmail.com>", 
                 to:      to,
                 subject: subject,
                 body:    body

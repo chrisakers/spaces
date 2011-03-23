@@ -17,10 +17,6 @@ server = http.createServer(function (req, res) {
     switch (path) {
     case '/':
         sendStatic({file: '/index.html'}, res);
-        break;
-    case '/wdpro-logo.png':
-        sendStatic({file: path}, res);
-        break;
 
     default: send404(res);
     }
@@ -162,9 +158,5 @@ io.on('connection', function(client){
         if (user && user.sessionId) delete user.sessionId;
     });
 });
-// WDPRO.Spaces@gmail.com
-// WDPRO-D1sn3y!
-
-
 
 console.log('Server running on port ' + SERVER_PORT);

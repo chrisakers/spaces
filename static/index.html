@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
     <head>
-        <title>WDPRO Spaces</title>
+        <title>Spaces</title>
         <script src="/socket.io/socket.io.js"></script>
         <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5/jquery.min.js"></script>
         <script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.min.js"></script>
@@ -27,7 +27,6 @@ header {
 }
 
 header h1 {
-    background: url(wdpro-logo.png) no-repeat 10px 14px;
     padding: 0 0 0 60px;
     margin: 0;
     display: inline-block;
@@ -119,7 +118,7 @@ textarea {width:95%;height:250px;}
     </head>
     <body>
         <header>
-            <h1>WDPRO Spaces</h1>
+            <h1>Spaces</h1>
             <div id="account"><button id="login">Login</button><span id="username"></span></div>
         </header>
   
@@ -279,7 +278,7 @@ textarea {width:95%;height:250px;}
                         $('#login-dialog').dialog('close');
                         $('#tabs').show();
                         $('#login').hide();
-                        loadSpace({id: 'space1', name: 'WDPRO'});
+                        loadSpace({id: 'space1', name: 'Default'});
                         $('#username').html(data.user.name).show();
                         if (data.spaces) data.spaces.forEach(addSpaceToList);
                         if (data.users) data.users.forEach(addUserToList);
