@@ -17,6 +17,7 @@ server = http.createServer(function (req, res) {
     switch (path) {
     case '/':
         sendStatic({file: '/index.html'}, res);
+        break;
 
     default: send404(res);
     }
